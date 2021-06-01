@@ -9,6 +9,8 @@ const app = express();
 require('dotenv').config();
 const routesUsers = require('./routes/routes');
 const User = require('./models/user');
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
 
 mongoose.connect(process.env.DB_CONNECTION, {
     useNewUrlParser: true,
@@ -72,11 +74,27 @@ passport.use(
 
 app.use('/', routesUsers);
 
-let port = process.env.PORT;
-if (port == null || port == '') {
-    port = 3000;
-}
+const users = {};
 
-app.listen(port, () => {
-    console.log(`listening on http://localhost:${port}/`);
+io.on('connection', (socket) => {
+    socket.on('new-user', (name) => {
+        users[socket.id] = name;
+        socket.broadcast.emit('user-connected', name);
+    });
+    socket.on('send-chat-message', (message) => {
+        socket.broadcast.emit('chat-message', {
+            message: message,
+            name: users[socket.id],
+        });
+        socket.on('disconnect', () => {
+            socket.broadcast.emit('user-disconnected', users[socket.id]);
+            delete users[socket.id];
+        });
+    });
+});
+
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+    console.log(`listening on http://localhost:${PORT}/`);
 });

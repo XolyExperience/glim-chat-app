@@ -1,5 +1,4 @@
-const io = require('socket.io-client');
-const socket = io('https://glim-chat-socket.herokuapp.com/');
+const socket = io('http://localhost:3000');
 const messageContainer = document.getElementById('message-container');
 const roomContainer = document.getElementById('room-container');
 const messageForm = document.getElementById('send-container');
